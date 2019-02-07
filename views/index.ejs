@@ -1,0 +1,220 @@
+<!DOCTYPE HTML PUBLIC "-//W3C/DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>urlrec</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+
+<!--
+<link rel="shortcut icon" href="./pi.png" type="image/png"/>
+<link rel="icon" href="./pi.png" type="image/png"/>
+<link rel="apple-touch-icon" href="./pi57.png"/>
+-->
+
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="apple-web-app-capable" content="yes"/>
+
+<script src="//code.jquery.com/jquery-2.0.3.min.js"></script>
+<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet"/>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+<link rel="stylesheet" href="//cdn.datatables.net/t/bs-3.3.6/jqc-1.12.0,dt-1.10.11/datatables.min.css"/>
+<script src="//cdn.datatables.net/t/bs-3.3.6/jqc-1.12.0,dt-1.10.11/datatables.min.js"></script>
+
+<link href="./colorbox.css" rel="stylesheet"/>
+<script src="./jquery.colorbox-min.js" type="text/javascript"></script>
+
+
+<script>
+$(function(){
+  initTable();
+});
+
+function checkUrl(){
+  var url = $('#url').val();
+  if( url ){
+    $('#myModalLabel').text( url );
+    $('#myModalIFrame').prop( "src", "/api/xframe?url=" + url );
+  }
+}
+
+function record(){
+  var url = $('#url').val();
+  var comment = $('#myModalComment').val();
+  console.log( 'record(): ' + url + ' : ' + comment );
+  if( url ){
+    $.ajax({
+      type: 'POST',
+      url: '/api/item',
+      data: { url: url, comment: comment },
+      success: function( body ){
+        if( body && body.status ){
+          console.log( body.message );
+          $('#url').val( '' );
+          location.reload();
+        }
+      },
+      error: function( err ){
+        console.log( err );
+      }
+    });
+  }
+}
+
+function compareByCreated( a, b ){
+  var r = 0;
+  if( a.created < b.created ){ r = -1; }
+  else if( a.created > b.created ){ r = 1; }
+
+  return r;
+}
+
+function initTable(){
+  $('#itemtable_body').html( '' );
+  $.ajax({
+    type: 'GET',
+    url: '/api/items',
+    success: function( body ){
+      if( body.status && body.items.length ){
+        body.items.forEach( function( item ){
+          var tr = '<tr>'
+            + '<td><a target="_blank" href="/single/' + item._id + '">' + item._id + '</a></td>'
+            + '<td>' + item.comment + '</td>'
+            + '<td>' + url4display( item.url ) + '</td>'
+            + '<td>' + timestamp2datetime( item.timestamp ) + '</td>'
+            + '<td><input class="btn btn-xs btn-danger" type="button" value="DELETE" onClick="deleteItem(\'' + item._id + '\')"/></td>'
+            + '</tr>';
+          $('#itemtable_body').append( tr );
+        });
+
+        $('#itemtable').DataTable({
+          lengthMenu: [ [ 5, 10, 50, 100, -1 ], [ 5, 10, 50, 100, "All" ] ],
+          columnDefs: [{
+            targets: [ 0, 4 ],
+            orderable: false,
+            searchable: false
+          }],
+          order: [ [ 3, 'desc' ] ]
+        });
+      }
+    },
+    error: function( err ){
+      console.log( err );
+    }
+  });
+}
+
+function deleteItem( id ){
+  if( id && confirm( '削除してよろしいですか？' ) ){
+    $.ajax({
+      type: 'DELETE',
+      url: '/api/item/' + id,
+      success: function( body ){
+        console.log( body );
+        location.reload();
+      },
+      error: function( err ){
+        console.log( err );
+      }
+    });
+  }
+}
+
+function timestamp2datetime( ts ){
+  var dt = new Date( ts );
+  var yyyy = dt.getFullYear();
+  var mm = dt.getMonth() + 1;
+  var dd = dt.getDate();
+  var hh = dt.getHours();
+  var nn = dt.getMinutes();
+  var ss = dt.getSeconds();
+  var datetime = yyyy + '-' + ( mm < 10 ? '0' : '' ) + mm + '-' + ( dd < 10 ? '0' : '' ) + dd
+    + ' ' + ( hh < 10 ? '0' : '' ) + hh + ':' + ( nn < 10 ? '0' : '' ) + nn + ':' + ( ss < 10 ? '0' : '' ) + ss;
+  return datetime;
+}
+
+function url4display( url, n ){
+  if( !n ){ n = 30; }
+  var s = '';
+  if( url && url.length > n ){
+    s = '<a href="' + url + '" target="_blank" title="' + url + '">' + url.substr( 0, n ) + '..</a>';
+  }else{
+    s = '<a href="' + url + '" target="_blank">' + url + '</a>';
+  }
+
+  return s;
+}
+
+function id4display( id, n ){
+  if( !n ){ n = 10; }
+  var s = '';
+  if( id && id.length > n ){
+    s = '<a href="#" title="' + id + '">' + id.substr( 0, n ) + '..</a>';
+  }else{
+    s = '<a href="#">' + id + '</a>';
+  }
+
+  return s;
+}
+</script>
+<style>
+#myModal{
+  width: 90%;
+  height: 90%;
+}
+.modal-dialog, .modal-content{
+  width: 100%;
+  height: 100%;
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-light bg-light">
+  <a class="navbar-brand" href="#"></a>
+  <ul class="navbar-nav mr-auto"></ul>
+  <ul class="navbar-nav" id="navbar">
+    <li>
+      <table><tr><td>
+      <input style="width:500px;" type="text" class="_form-control" id="url" value="" placeholder="URL"/>
+      <input class="btn btn-xs btn-primary" type="button" data-toggle="modal" data-target="#myModal" onClick="checkUrl();" value="CHECK"/>
+      </td></tr></table>
+    </li>
+  </ul>
+</nav>
+
+
+<div class="container" style="padding: 50px 0 0 0">
+  <table id="itemtable" width="100%" class="table table-bordered">
+    <thead>
+      <tr><th>#</th><th>comment</th><th>url</th><th>datetime</th><th>actions</th></tr>
+    </thead>
+    <tbody id="itemtable_body">
+    </tbody>
+  </table>
+</div>
+
+
+<div class="modal bd-example-modal-lg fade" id="myModal" tabindex="-1" role="dialog" aria-labbelledby="myModal" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="myModalLabel"></h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="myModalBody">
+        <iframe width="100%" height="60%" src="" id="myModalIFrame"></iframe>
+        <input type="text" class="form-control" id="myModalComment" value="" placeholder="comment.."/>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal" onClick="record()">Record</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>

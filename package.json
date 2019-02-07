@@ -1,0 +1,22 @@
+{
+    "name": "urlrec",
+    "version": "0.0.1",
+    "scripts": {
+        "start": "node app.js"
+    },
+    "dependencies": {
+        "@cloudant/cloudant": "^3.0.1",
+        "body-parser": "1.17.x",
+        "cfenv": "~1.0.0",
+        "cheerio-httpcli": "^0.7.3",
+        "ejs": "^2.6.1",
+        "express": "4.1.x",
+        "fs": "~0.0.1",
+        "request": "^2.88.0",
+        "uuidv1": "^1.6.14"
+    },
+    "repository": {},
+    "engines": {
+        "node": "6.x"
+    }
+}
