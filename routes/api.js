@@ -317,24 +317,24 @@ function Url2Html( url, encode ){
                 src_base = base + src;
               }
   
-              client.fetch( src_base, {}, function( err1, $, res1, body1 ){
-                var content_type = res1['headers']['content-type'];
-                request.defaults( { encoding: null } ).get( src_base, ( err2, { statusCode2, headers2 }, body2 ) => {
-                  if( err2 ){
-                    //console.log( err2 );
-                  }else{
-                    //. <img src="data:image/png;base64,XXXX...XXX"/>
-                    //console.log( headers2 );
-                    var b64 = new Buffer( body2 ).toString( 'base64' );
-                    var imgdata = 'data:' + content_type + ';base64,' + b64;
-                    body0 = body0.split( src ).join( imgdata );
+              request( { method: 'GET', url: src_base, encoding: null }, function( err1, res1, body1 ){
+                if( err1 ){
+                  console.log( err1 );
+                }else{
+		  var content_type = 'image/png';
+                  if( res1 && res1['headers'] && res1['headers']['content-type'] ){
+                    content_type = res1['headers']['content-type'];
                   }
+                  //. <img src="data:image/png;base64,XXXX...XXX"/>
+                  var b64 = new Buffer( body1 ).toString( 'base64' );
+                  var imgdata = 'data:' + content_type + ';base64,' + b64;
+                  body0 = body0.split( src ).join( imgdata );
+                }
     
-                  i ++;
-                  if( i == cnt3 ){
-                    resolve( body0 );
-                  }
-                });
+                i ++;
+                if( i == cnt3 ){
+                  resolve( body0 );
+                }
               });
             }
           });
